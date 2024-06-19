@@ -4,11 +4,15 @@ import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { AuthContext } from "../../provider/AuthProvider";
 import Swal from "sweetalert2";
+import useAxiosPublic from "../../hooks/useAxiosPublic";
+import SocialLogin from "../../components/SocialLogin/SocialLogin";
 
 const SignUp = () => {
     const { register, handleSubmit, formState: { errors }, reset } = useForm()
     const { createUser, updateUserProfile } = useContext(AuthContext);
     const navigate = useNavigate();
+    const axiosPublic = useAxiosPublic();
+
 
     const onSubmit = (data) => {
         createUser(data.email, data.password)
@@ -17,16 +21,27 @@ const SignUp = () => {
                 console.log(user);
                 updateUserProfile(data.name, data.photoURL)
                     .then(() => {
-                        console.log('user updated successfully');
-                        Swal.fire({
-                            position: "top-end",
-                            icon: "success",
-                            title: "User created Successfully.",
-                            showConfirmButton: false,
-                            timer: 1500
-                        });
-                        reset()
-                        navigate('/')
+                        // create user entry in the database
+                        const userInfo = {
+                            name: data.name,
+                            email: data.email
+                        }
+                        axiosPublic.post('/users', userInfo)
+                            .then(res => {
+                                if (res.data.insertedId) {
+                                    Swal.fire({
+                                        position: "top-end",
+                                        icon: "success",
+                                        title: "User created Successfully.",
+                                        showConfirmButton: false,
+                                        timer: 1500
+                                    });
+                                    reset()
+                                    navigate('/')
+                                }
+                            })
+
+
                     })
                     .catch(err => {
                         console.log(err);
@@ -88,7 +103,8 @@ const SignUp = () => {
                                 <input className="btn btn-primary" type="submit" value="Sign up" />
                             </div>
                         </form>
-                        <p><small>You have a already register please <Link to={'/login'}>login here</Link></small></p>
+                        <p className="px-6"><small>You have a already register please <Link to={'/login'}>login here</Link></small></p>
+                        <SocialLogin />
                     </div>
                 </div>
             </div>
